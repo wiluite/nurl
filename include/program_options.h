@@ -14,9 +14,9 @@ namespace nurl_conf
         extern std::string url_type;
         extern std::string digest_path;
         extern std::string digest_name;
-        extern size_t speed_limit_bytes;
-        extern size_t speed_limit_time;
-        extern size_t connect_timeout;
+        extern long speed_limit_bytes;
+        extern long speed_limit_time;
+        extern long connect_timeout;
         extern size_t connects;
         extern size_t hardware_threads;
         extern std::string log_path;

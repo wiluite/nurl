@@ -4,6 +4,7 @@
 #include "init_logs.h"
 #include <boost/thread/mutex.hpp>
 #include <iomanip>
+#include <iostream>
 
 namespace nurl_logging
 {

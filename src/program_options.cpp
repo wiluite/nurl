@@ -6,10 +6,10 @@
 #include "log_wrapper.h"
 #include <boost/mpl/for_each.hpp>
 #include <boost/thread.hpp>
+#include <iostream>
 
 namespace nurl_conf
 {
-
     namespace po = boost::program_options;
     namespace mpl = boost::mpl;
 
@@ -25,16 +25,16 @@ namespace nurl_conf
     std::string details::url_type;
     std::string details::digest_path;
     std::string details::digest_name;
-    size_t details::speed_limit_bytes;
-    size_t details::speed_limit_time;
-    size_t details::connect_timeout;
+    long details::speed_limit_bytes;
+    decltype(details::speed_limit_time) details::speed_limit_time;
+    decltype(details::connect_timeout) details::connect_timeout;
     size_t details::connects;
     size_t details::hardware_threads;
     std::string details::log_path;
 
     struct program_options_logger
     {
-        program_options_logger(boost::any& val, const std::string& n) : value (&val), name(n) {}
+        program_options_logger(boost::any& val, std::string n) : value (&val), name(std::move(n)) {}
         template< typename U > void operator()(U)
         {
             if (auto v = boost::any_cast<U> (value))
@@ -56,7 +56,7 @@ namespace nurl_conf
             }
         }
         boost::any* value;
-        const std::string& name;
+        const std::string name;
     };
 
     bool details::POInit(int argc, char* argv[])
@@ -90,14 +90,14 @@ namespace nurl_conf
              "eg. --digest-path=<path>")
             ("digest-name", po::value< std::string>(&digest_name)->default_value("digest"),
              "eg. --digest-name=<name>")
-            ("speed-limit-bytes", po::value< size_t>(&speed_limit_bytes)->default_value(500000),
+            ("speed-limit-bytes", po::value< long>(&speed_limit_bytes)->default_value(500000),
              "Minimal bytes per second to go on downloading, eg. --speed-limit-bytes=<bytes>")
-            ("speed-limit-time", po::value< size_t>(&speed_limit_time)->default_value(5),
+            ("speed-limit-time", po::value<decltype(speed_limit_time)>(&speed_limit_time)->default_value(5),
              "Maximal time to download at limited speed (see speed-limit-bytes), eg. --speed-limit-time=<seconds>")
-            ("connect-timeout", po::value< size_t>(&connect_timeout)->default_value(5),
+            ("connect-timeout", po::value<decltype(connect_timeout)>(&connect_timeout)->default_value(5),
              "Maximal time to connect to any remote host {1-10}, eg. --connect-timeout=<seconds>")
             ("connects", po::value< size_t>(&connects)->default_value(5),
-             "Connect attempts {1-10}, eg. --connects=<value>")
+             "Connect attempts (for each host) {1-10}, eg. --connects=<value>")
             ("hardware-threads", po::value< size_t>(&hardware_threads)->default_value(2),
              "Hardware threads, eg. --hardware-threads=<value>")
             ("log-path", po::value< std::string>(&log_path)->default_value("."),
@@ -133,20 +133,20 @@ namespace nurl_conf
             if (vm.count("help"))
             {
                 std::cout << visible << "\n";
-                return 0;
+                return true;
             }
 
             if (vm.count("version"))
             {
                 std::cout << "NURL: NOT CURL, version 1.0.0\n";
-                return 0;
+                return true;
             }
 
             std::ifstream ifs(config_file.c_str());
             if (!ifs)
             {
                 std::cout << "Can not open config file: " << config_file << "\n";
-                return 0;
+                return true;
             }
             else
             {
@@ -167,7 +167,7 @@ namespace nurl_conf
                 if ((url_type != "sftp") && (url_type != "ftp") )
                 {
                     Log_Wrapper ("Неизвестный URL-type: ", url_type);
-                    return 0;
+                    return true;
                 }
             }
             if (vm.count ("connect-timeout"))
@@ -175,7 +175,7 @@ namespace nurl_conf
                 if ((connect_timeout ==0) || (connect_timeout > 10))
                 {
                     Log_Wrapper ("Неправильный connect-timeout: ", connect_timeout);
-                    return 0;
+                    return true;
                 }
             }
             if (vm.count ("connects"))
@@ -183,7 +183,7 @@ namespace nurl_conf
                 if ((connects == 0) || (connects > 10))
                 {
                     Log_Wrapper ("Неправильный параметр connects: ", connects);
-                    return 0;
+                    return true;
                 }
             }
             if (vm.count ("hardware-threads"))
@@ -191,7 +191,7 @@ namespace nurl_conf
                 if ((hardware_threads == 0) || (hardware_threads > boost::thread::hardware_concurrency()))
                 {
                     Log_Wrapper ("Число аппаратных потоков 0 или превышает аппаратный лимит (hardware_concurrency): ", hardware_threads, " > ", boost::thread::hardware_concurrency());
-                    return 0;
+                    return true;
                 }
             }
             const std::string& hyphen {"------------------------------"};
@@ -205,10 +205,6 @@ namespace nurl_conf
         }
         catch (boost::exception &x)
         {
-            //x = x; //MSVC complained compilation suppress
-#ifdef _MSC_VER
-            x;
-#endif
             throw;
         }
         catch(std::exception& e)
