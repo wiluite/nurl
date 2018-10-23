@@ -30,7 +30,7 @@ namespace nurl
         };
         std::deque<file_params> file_params_deque;
 
-        // Clang complaint, but used by friend class file_enumerator
+        // Clion complaint, but used by friend class file_enumerator
         uint8_t file_params_deque_cursor = 0;
 
         struct write_function_data_struct
