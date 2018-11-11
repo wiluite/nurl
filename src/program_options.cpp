@@ -7,6 +7,21 @@
 #include <boost/mpl/for_each.hpp>
 #include <boost/thread.hpp>
 #include <iostream>
+#include <codecvt>
+
+template <typename T>
+std::wstring str_2_wstr(T obj)
+{
+    std::stringstream ss;
+    ss << obj;
+    return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> {}.from_bytes(ss.str());
+}
+template<>
+std::wstring str_2_wstr<const char*>(const char* obj)
+{
+    std::string s {obj};
+    return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> {}.from_bytes(s);
+}
 
 namespace nurl_conf
 {
@@ -132,21 +147,22 @@ namespace nurl_conf
 
             if (vm.count("help"))
             {
-                std::cout << visible << "\n";
-                return true;
+                std::wcout << str_2_wstr(visible) << "\n";
+                return false;
             }
 
             if (vm.count("version"))
             {
-                std::cout << "NURL: NOT CURL, version 1.0.0\n";
-                return true;
+                std::wcout << L"NURL: NOT CURL, версия 1.0.0\n";
+                return false;
             }
 
             std::ifstream ifs(config_file.c_str());
             if (!ifs)
             {
-                std::cout << "Can not open config file: " << config_file << "\n";
-                return true;
+                std::wcout << L"Не открывается конфигурационный файл: " << "\n";
+                std::wcout << str_2_wstr(config_file.c_str()) << '\n';
+                return false;
             }
             else
             {
@@ -164,18 +180,18 @@ namespace nurl_conf
             }
             if (vm.count ("URL-type"))
             {
-                if ((url_type != "sftp") && (url_type != "ftp") )
+                if ((url_type != "ftp") )
                 {
                     Log_Wrapper ("Неизвестный URL-type: ", url_type);
-                    return true;
+                    return false;
                 }
             }
             if (vm.count ("connect-timeout"))
             {
-                if ((connect_timeout ==0) || (connect_timeout > 10))
+                if ((connect_timeout == 0) || (connect_timeout > 10))
                 {
                     Log_Wrapper ("Неправильный connect-timeout: ", connect_timeout);
-                    return true;
+                    return false;
                 }
             }
             if (vm.count ("connects"))
@@ -183,7 +199,7 @@ namespace nurl_conf
                 if ((connects == 0) || (connects > 10))
                 {
                     Log_Wrapper ("Неправильный параметр connects: ", connects);
-                    return true;
+                    return false;
                 }
             }
             if (vm.count ("hardware-threads"))
@@ -191,17 +207,18 @@ namespace nurl_conf
                 if ((hardware_threads == 0) || (hardware_threads > boost::thread::hardware_concurrency()))
                 {
                     Log_Wrapper ("Число аппаратных потоков 0 или превышает аппаратный лимит (hardware_concurrency): ", hardware_threads, " > ", boost::thread::hardware_concurrency());
-                    return true;
+                    return false;
                 }
             }
-            const std::string& hyphen {"------------------------------"};
-            Log_Wrapper(hyphen.c_str());
+
+            const auto hyphen {"------------------------------"};
+            Log_Wrapper lw (hyphen);
             for (auto& it : vm)
             {
                 using program_options_types = mpl::list<std::string, size_t> ;
                 mpl::for_each<program_options_types>( program_options_logger(it.second.value(), it.first) );
             }
-            Log_Wrapper(hyphen.c_str());
+            Log_Wrapper lw2 (hyphen);
         }
         catch (boost::exception &x)
         {

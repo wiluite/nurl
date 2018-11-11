@@ -1,4 +1,5 @@
 // Experiments with curl downloading of cataloged remote file set
+// Goal: simplify curl_multi... with curl_easy... and thread.
 
 #include "file_enum.h"
 #include "host_proc.h"
@@ -7,6 +8,8 @@
 #include <boost/thread/thread.hpp> // thread_group
 
 #include <windef.h>
+#include <fcntl.h>
+
 #define cons_handler static BOOL WINAPI console_handler(DWORD event)
 #define cons_handler_setup SetConsoleCtrlHandler((PHANDLER_ROUTINE)console_handler, TRUE)
 
@@ -30,10 +33,7 @@ boost::future<int>& get_complete_future()
 
 auto main(int argc, char* argv[]) -> int
 {
-    SetConsoleOutputCP(65001);
-
-    using HostProcessorPtr = std::unique_ptr<nurl::HostProcessor>;
-    cons_handler_setup;
+    _setmode(_fileno(stdout), _O_WTEXT);
 
     try
     {
@@ -47,11 +47,15 @@ auto main(int argc, char* argv[]) -> int
 
         if (nurl_conf::details::host_addr_vec.empty())
         {
-            nurl_logging::Log_Wrapper (" Не найдены адреса хостов.");
+            nurl_logging::Log_Wrapper ("Не найдены адреса хостов.");
             return 0;
         }
 
-        std::vector<HostProcessorPtr> host_processor_vec;
+        cons_handler_setup;
+
+        std::vector<std::unique_ptr<nurl::HostProcessor>> host_processor_vec;
+        host_processor_vec.reserve(nurl_conf::details::host_addr_vec.size());
+
         boost::asio::io_service ioService{};
         for (const auto& el : nurl_conf::details::host_addr_vec)
         {
@@ -84,7 +88,7 @@ auto main(int argc, char* argv[]) -> int
         ioService.stop();
 
         threadpool.join_all();
-        nurl_logging::Log_Wrapper ("--Завершено.");
+        nurl_logging::Log_Wrapper ("Завершено.");
     }
     catch (boost::exception & x)
     {

@@ -74,7 +74,7 @@ namespace nurl
 
                 if (file_params_deque.empty())
                 {
-                    nurl_logging::Log_Wrapper ("--Согласно оглавлению нет файлов для скачивания по ", host_addr_);
+                    nurl_logging::Log_Wrapper ("Согласно оглавлению нет файлов для скачивания по ", host_addr_);
                     process_failure(conn_times);
                     return;
                 }
@@ -84,7 +84,7 @@ namespace nurl
             }
             else
             {
-                nurl_logging::Log_Wrapper ("--Не читается оглавление по ", host_addr_);
+                nurl_logging::Log_Wrapper ("Не читается оглавление по ", host_addr_);
                 process_failure(conn_times);
             }
         }

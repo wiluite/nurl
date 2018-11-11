@@ -124,7 +124,7 @@ namespace nurl
                     else
                     {
                         Log_Wrapper ("CURLINFO_CONTENT_LENGTH_DOWNLOAD error: ", res, get_Code2DescMap()[res], "\n", url_addr);
-                        Log_Wrapper ("--Файл в оглавлении, но (вероятно) фактически удален с хоста.");
+                        Log_Wrapper ("Файл в оглавлении, но (вероятно) фактически удален с хоста.");
                     }
                 }
                 else

@@ -3,41 +3,45 @@
 #include <sstream>
 #include "init_logs.h"
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/lock_guard.hpp>
 #include <iomanip>
 #include <iostream>
+#include <codecvt>
 
 namespace nurl_logging
 {
 
 //Stroustrup 4, 28.6.1
 
-    static inline void print_to_obuf(std::ostream & ostream_buf, std::ostringstream & sstream_buf)
+    static inline void print_to_obuf(std::ostream & log) noexcept
+    {}
+
+    template <class First, class ... Rest>
+    static inline void print_to_obuf (std::ostream & log, First && first, Rest && ... rest)
     {
+        log << std::setprecision(15) << first;
+        print_to_obuf(log, std::forward<Rest>(rest) ...);
     }
 
-    template <class V, class ... Args>
-    static inline void print_to_obuf (std::ostream & ostream_buf, std::ostringstream & sstream_buf, const V& value, const Args& ... args)
+    inline boost::mutex& get_cons_mutex()
     {
-        ostream_buf << std::setprecision(15) << value;
-        sstream_buf << std::setprecision(15) << value;
-        print_to_obuf(ostream_buf, sstream_buf, args...);
-    }
-
-    static boost::mutex cout_mutex;
+        static boost::mutex cons_mutex;
+        return cons_mutex;
+    };
 
     class Log_Wrapper
     {
     public:
-        template <typename ...T> inline Log_Wrapper(const T& ... args)
+        template <typename ... T>
+        explicit Log_Wrapper(T && ... args)
         {
-            using platform_guard_lock = boost::lock_guard<boost::mutex>;
-            std::ostringstream ostream_buf {};
-            std::ostringstream sstream_buf {};
-            print_to_obuf (ostream_buf, sstream_buf, args...);
-            BOOST_LOG_STREAM(my_logger::get()) << ostream_buf.str();
-            platform_guard_lock lk (cout_mutex);
-            std::cout << sstream_buf.str() << "\n";
-
+            std::stringstream log {};
+            print_to_obuf (log, args...);
+            BOOST_LOG_STREAM(my_logger::get()) << log.str();
+            {
+                boost::lock_guard<boost::mutex> lk (get_cons_mutex());
+                std::wcout << std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> {}.from_bytes(log.str()) << "\n";
+            }
         }
     };
 

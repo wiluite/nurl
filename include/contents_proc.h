@@ -37,7 +37,7 @@ namespace nurl
             std::tie (err_code, std::ignore) = details::curl_download_file(impulse_log_url, wr_func, &oss, speed_limit_bytes, speed_limit_time, connect_timeout);
             if (CURLE_OK != err_code)
             {
-                nurl_logging::Log_Wrapper ("--Код ошибки ", err_code, details::get_Code2DescMap()[err_code], " по хосту: ", host_addr_);
+                nurl_logging::Log_Wrapper ("Код ошибки ", err_code, details::get_Code2DescMap()[err_code], " по хосту: ", host_addr_);
                 return false;
             }
             return true;
