@@ -16,10 +16,30 @@ namespace nurl_logging
     static inline void print_to_obuf(std::ostream & log) noexcept
     {}
 
+    template <typename T>
+    static inline void log_impl(std::ostream & log, T && val)
+    {
+        log << val;
+    }
+
+    // overload for float and double
+    #define LOG_IMPL(value_type, mess) \
+    inline void log_impl(std::ostream & log, value_type val) \
+    { \
+        log << std::setprecision(15) << val; \
+    }
+
+    LOG_IMPL (double &, "DOUBLE LV.")
+    LOG_IMPL (double &&, "DOUBLE RV.")
+    LOG_IMPL (float &, "FLOAT LV! ")
+    LOG_IMPL (float &&, "FLOAT RV! ")
+    LOG_IMPL (double const &, "CONST DOUBLE LV! ")
+    LOG_IMPL (float const &, "CONST FLOAT LV! ")
+
     template <class First, class ... Rest>
     static inline void print_to_obuf (std::ostream & log, First && first, Rest && ... rest)
     {
-        log << std::setprecision(15) << first;
+        log_impl(log, std::forward<First>(first));
         print_to_obuf(log, std::forward<Rest>(rest) ...);
     }
 
@@ -36,7 +56,7 @@ namespace nurl_logging
         explicit Log_Wrapper(T && ... args)
         {
             std::stringstream log {};
-            print_to_obuf (log, args...);
+	    print_to_obuf (log, std::forward<T>(args) ...);
             BOOST_LOG_STREAM(my_logger::get()) << log.str();
             {
                 boost::lock_guard<boost::mutex> lk (get_cons_mutex());

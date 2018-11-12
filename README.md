@@ -7,7 +7,7 @@ This utility uses Boost.Asio thread pool and its task management mechanism to pr
 Dependencies:
 
 	- Windows
-	- MinGW C++11 compliant compiler (I use MinGW Distro by S.Lavavej)
+	- C++11 compliant compiler (I use MinGW Distro by S.Lavavej)
 	- Boost.Thread, Boost.Filesystem, Boost.Log, Boost.Program_options
 	- libcurl
 	- CMake
@@ -17,10 +17,11 @@ Features:
 	- Currently Windows only, meaning easy migration to anywhere else	
 	- Currently FTP transport only
 	- Support for automatic resuming download after disconnection
-	- Avoidance of re-downloading fully/partially obtained files
+	- Avoidance of re-downloading fully/partly obtained binary stuff
 	- Strongly localized remote digests which describe files to download
 	- Automatic disconnection at low download speed for specified time
 	- Cyclically switch remote hosts and files to download
+	- Unique file names throughout the hosts
 
 
 Examples:
